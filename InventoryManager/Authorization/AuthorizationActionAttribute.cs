@@ -9,18 +9,10 @@ namespace InventoryManagerAPI.Authorization
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
     public class AuthorizeActionAttribute : AuthorizeAttribute, IAuthorizeData
     {
-        /// <summary>
-        /// Initializes a new instance of the AuthorizeActionAttribute class with the specified action.
-        /// </summary>
-        /// <param name="action">The action required for authorization.</param>
-        public AuthorizeActionAttribute(string action) : base()
+        public AuthorizeActionAttribute(string action) : base("ActionPolicy")
         {
             Action = action;
         }
-
-        /// <summary>
-        /// Gets the required action for authorization.
-        /// </summary>
         public string Action { get; }
     }
 }

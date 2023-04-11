@@ -104,14 +104,14 @@ namespace InventoryManagerAPI.Controllers
         /// </summary>
         /// <returns>A user with the specified id</returns>
         [HttpGet("{id}")]
-        [AuthorizeAction("/user/read")]
+        [AuthorizeAction("/user/{id}/read")]
         public ActionResult<object> GetById(int id)
         {
             try
             {
                 var userId = int.Parse(User.FindFirstValue("userId"));
 
-                bool canReadRoles = _userAuthorizationService.UserHasActionPermissionAsync(userId, "/roles/read").Result;
+                bool canReadRoles = _userAuthorizationService.UserHasActionPermissionAsync(userId, $"/user/{id}/roles/read").Result;
 
                 if (canReadRoles)
                 {

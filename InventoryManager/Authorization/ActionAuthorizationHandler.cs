@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using InventoryManagerAPI.Context;
 using InventoryManagerAPI.Helpers;
@@ -40,8 +41,19 @@ namespace InventoryManagerAPI.Authorization
             var attributes = endpoint.Metadata.OfType<AuthorizeActionAttribute>();
             var actions = attributes.Select(a => ReplacePlaceholders(a.Action, _httpContextAccessor.HttpContext)).ToList();
 
+            if(actions.Count == 0) { 
+                context.Succeed(requirement);
+                return;
+            }
+
             // Get user roles from claims
-            var userRoles = context.User.Claims.Where(c => c.Type == "Role").Select(c => c.Value).ToList();
+            var userRoles = context.User.Claims
+                                   .Where(c => c.Type == ClaimTypes.Role) // Update this line to use ClaimTypes.Role
+                                   .Select(c => c.Value).ToList();
+
+            var userIdClaim = context.User.Claims.FirstOrDefault(c => c.Type == "userId");
+            int? userId = userIdClaim != null ? int.Parse(userIdClaim.Value) : (int?)null;
+
 
             // Retrieve role entities from the database
             var roles = await _dbContext.Roles
@@ -51,8 +63,15 @@ namespace InventoryManagerAPI.Authorization
             // Iterate through each role associated with the user
             foreach (var role in roles)
             {
-                var allowedActions = role.allowedActions;
-                var notAllowedActions = role.notAllowedActions;
+                var allowedActions = role.allowedActions ?? new string[] { };
+                var notAllowedActions = role.notAllowedActions ?? new string[] { };
+
+                // If userId is available, add a new allowed action based on the userId
+                if (userId.HasValue)
+                {
+                    allowedActions = allowedActions.Concat(new string[] { $"/user/{userId.Value}/*/read" }).ToArray();
+                    allowedActions = allowedActions.Concat(new string[] { $"/user/{userId.Value}/read" }).ToArray();
+                }
 
                 // Iterate through each action required by the endpoint
                 foreach (var action in actions)
@@ -60,7 +79,7 @@ namespace InventoryManagerAPI.Authorization
                     bool allowed = false;
 
                     // Check if the action is allowed based on the allowedActions patterns
-                    foreach (var allowedPattern in allowedActions ?? new string[] { })
+                    foreach (var allowedPattern in allowedActions)
                     {
                         if (Utils.MatchesPattern(action, allowedPattern))
                         {
@@ -71,7 +90,7 @@ namespace InventoryManagerAPI.Authorization
 
                     // Check if the action is denied based on the notAllowedActions patterns
                     // If the action is both allowed and denied, the denial takes precedence
-                    foreach (var notAllowedPattern in notAllowedActions ?? new string[] { })
+                    foreach (var notAllowedPattern in notAllowedActions)
                     {
                         if (Utils.MatchesPattern(action, notAllowedPattern))
                         {

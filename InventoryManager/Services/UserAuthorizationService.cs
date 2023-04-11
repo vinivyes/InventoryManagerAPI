@@ -30,13 +30,17 @@ namespace InventoryManagerAPI.Services
             // Iterate through each role associated with the user
             foreach (var role in roles)
             {
-                var allowedActions = role.allowedActions;
-                var notAllowedActions = role.notAllowedActions;
+                var allowedActions = role.allowedActions ?? new string[] { };
+                var notAllowedActions = role.notAllowedActions ?? new string[] { };
 
                 bool allowed = false;
 
+                // Add a new allowed action based on the userId
+                allowedActions = allowedActions.Concat(new string[] { $"/user/{userId}/*/read" }).ToArray();
+                allowedActions = allowedActions.Concat(new string[] { $"/user/{userId}/read" }).ToArray();
+
                 // Check if the action is allowed based on the allowedActions patterns
-                foreach (var allowedPattern in allowedActions ?? new string[] { })
+                foreach (var allowedPattern in allowedActions)
                 {
                     if (Utils.MatchesPattern(action, allowedPattern))
                     {
@@ -47,7 +51,7 @@ namespace InventoryManagerAPI.Services
 
                 // Check if the action is denied based on the notAllowedActions patterns
                 // If the action is both allowed and denied, the denial takes precedence
-                foreach (var notAllowedPattern in notAllowedActions ?? new string[] { })
+                foreach (var notAllowedPattern in notAllowedActions)
                 {
                     if (Utils.MatchesPattern(action, notAllowedPattern))
                     {

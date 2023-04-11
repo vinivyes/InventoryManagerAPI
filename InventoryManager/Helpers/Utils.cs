@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace InventoryManagerAPI.Helpers
 {
@@ -87,13 +88,14 @@ namespace InventoryManagerAPI.Helpers
 
         /// <summary>
         /// Determines whether the given action matches the specified pattern.
-        /// </summary>
-        /// <param name="action">The action to be checked.</param>
-        /// <param name="pattern">The pattern to match the action against. Supports wildcards:
+        /// Supports multiple wildcards, such as:
         /// '*' matches all actions,
         /// '/inventory/*' matches actions starting with '/inventory/',
+        /// '/user/*/roles/*' matches actions with the format '/user/{userId}/roles/{action}',
         /// '/product/read' matches the exact action '/product/read'.
-        /// </param>
+        /// </summary>
+        /// <param name="action">The action to be checked.</param>
+        /// <param name="pattern">The pattern to match the action against.</param>
         /// <returns>True if the action matches the pattern, otherwise false.</returns>
         public static bool MatchesPattern(string action, string pattern)
         {
@@ -101,14 +103,16 @@ namespace InventoryManagerAPI.Helpers
             {
                 return true;
             }
-            else if (pattern.EndsWith("/*"))
-            {
-                string prefix = pattern.Substring(0, pattern.Length - 1); // Remove the last '*' character
-                return action.StartsWith(prefix);
-            }
             else
             {
-                return action == pattern;
+                // Replace each wildcard with a regex pattern that matches one or more characters
+                string regexPattern = pattern.Replace("*", ".*");
+
+                // Create a regex object with the modified pattern and set RegexOptions.IgnoreCase for case-insensitive matching
+                Regex regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
+
+                // Check if the action matches the regex pattern
+                return regex.IsMatch(action);
             }
         }
 

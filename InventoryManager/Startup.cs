@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,11 +60,22 @@ namespace InventoryManagerAPI
                 };
             });
 
-            // Register the custom authorization handler for ActionAuthorizationRequirement
+            // Register IHttpContextAccessor
+            services.AddHttpContextAccessor();
+
+            // Register ActionAuthorizationHandler
             services.AddScoped<IAuthorizationHandler, ActionAuthorizationHandler>();
 
-            // Register the IHttpContextAccessor service to access the HttpContext in custom authorization handlers
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            // Register Authorization policy
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("ActionPolicy", policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.Requirements.Add(new ActionAuthorizationRequirement());
+                });
+            });
+
 
             //Register Service to handle user authorization
             services.AddScoped<UserAuthorizationService>();
