@@ -2,7 +2,7 @@
 using System;
 
 namespace InventoryManagerAPI.Authorization
-{   
+{    
     /// <summary>
     /// Custom authorization attribute to specify required actions for authorization.
     /// </summary>

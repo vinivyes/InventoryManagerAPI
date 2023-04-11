@@ -16,6 +16,12 @@ using System.IdentityModel.Tokens.Jwt;
 namespace InventoryManagerAPI.Controllers
 {
 
+    /// <summary>
+    /// Controller for Authentication routes
+    /// 
+    /// Available Routes:
+    /// [POST] /auth/login          | Tries to authenticate an User and return a JWT token
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class AuthController : ControllerBase

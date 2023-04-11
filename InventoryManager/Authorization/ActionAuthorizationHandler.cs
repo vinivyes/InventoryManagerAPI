@@ -20,6 +20,7 @@ namespace InventoryManagerAPI.Authorization
         /// Initializes a new instance of the ActionAuthorizationHandler class.
         /// </summary>
         /// <param name="httpContextAccessor">Provides access to the current HttpContext.</param>
+        /// <param name="dbContext">The database context for accessing role information.</param>
         public ActionAuthorizationHandler(IHttpContextAccessor httpContextAccessor, InventoryContext dbContext)
         {
             _httpContextAccessor = httpContextAccessor;
@@ -37,7 +38,7 @@ namespace InventoryManagerAPI.Authorization
             // Get the action values from the custom attributes.
             var endpoint = _httpContextAccessor.HttpContext.GetEndpoint();
             var attributes = endpoint.Metadata.OfType<AuthorizeActionAttribute>();
-            var actions = attributes.Select(a => a.Action).ToList();
+            var actions = attributes.Select(a => ReplacePlaceholders(a.Action, _httpContextAccessor.HttpContext)).ToList();
 
             // Get user roles from claims
             var userRoles = context.User.Claims.Where(c => c.Type == "Role").Select(c => c.Value).ToList();
@@ -89,6 +90,21 @@ namespace InventoryManagerAPI.Authorization
             }
 
             return;
+        }
+
+        /// <summary>
+        /// Replaces placeholders in the action string with their corresponding values from the route data.
+        /// </summary>
+        /// <param name="action">The action string containing placeholders.</param>
+        /// <param name="httpContext">The current HttpContext.</param>
+        /// <returns>A new action string with placeholders replaced with their actual values.</returns>
+        private string ReplacePlaceholders(string action, HttpContext httpContext)
+        {
+            foreach (var routeValue in httpContext.Request.RouteValues)
+            {
+                action = action.Replace("{" + routeValue.Key + "}", routeValue.Value.ToString());
+            }
+            return action;
         }
     }
 }

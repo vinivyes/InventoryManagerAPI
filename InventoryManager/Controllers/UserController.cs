@@ -11,6 +11,7 @@ using InventoryManagerAPI.Helpers;
 using InventoryManagerAPI.Authorization;
 using System.Security.Claims;
 using InventoryManagerAPI.Services;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace InventoryManagerAPI.Controllers
 {
@@ -22,6 +23,7 @@ namespace InventoryManagerAPI.Controllers
     /// [GET] /user/{id}       | Get a User with the specified {id}
     /// [POST] /user/          | Create a new User
     /// [PUT] /user/{id}       | Update a User with the specified {id}
+    /// [DELETE] /user/{id}    | Deletes a User with the specified {id}
     /// </summary>
     [ApiController]
     [Route("[controller]")]
@@ -195,11 +197,16 @@ namespace InventoryManagerAPI.Controllers
         }
 
         /// <summary>
-        /// Updates an existing User
+        /// Updates an existing user with the given ID by replacing the existing properties with the new ones provided in the request body.
+        /// The request body should contain a dictionary of properties that need to be updated. Email and passwordDate properties are not modifiable via this endpoint.
+        /// If the password property is included, the new password is validated and hashed, and the password date is also updated.
+        /// If the request contains an invalid or non-existent property, a bad request status code is returned.
+        /// If the given ID does not correspond to an existing user, a not found status code is returned.
+        /// If the update operation is successful, a no content status code is returned.
         /// </summary>
-        /// <param name="id">Id of User to update</param>
-        /// <param name="user">User object retrieved from request body - properties defined in this object will be used to update stored object.</param>
-        /// <returns></returns>
+        /// <param name="id">The ID of the user to be updated</param>
+        /// <param name="user">A dictionary of properties that need to be updated</param>
+        /// <returns>A status code indicating the outcome of the operation</returns>
         [HttpPut("{id}")]
         [AuthorizeAction("/user/write")]
         public IActionResult Update(int id, [FromBody] dynamic user)
@@ -272,5 +279,33 @@ namespace InventoryManagerAPI.Controllers
             }
         }
 
+
+        [HttpDelete("{id}")]
+        [AuthorizeAction("/user/delete")]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                //Check if a User with specified Id exists
+                User existingUser = _context.Users
+                                            .SingleOrDefault(s => s.id == id);
+
+                if (existingUser is null)
+                    return NotFound();
+
+                _context.Remove(existingUser);
+                _context.SaveChanges();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    code = "E000004",
+                    message = Utils.Log(ex)
+                });
+            }
+        }
     }
 }
