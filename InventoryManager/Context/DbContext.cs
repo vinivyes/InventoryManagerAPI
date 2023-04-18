@@ -24,7 +24,7 @@ namespace InventoryManagerAPI.Context
         {
             //Roles
             modelBuilder.Entity<Role>().HasData(new Role { id = 1, name = "Administrator", isActive = true, allowedActions = new string[] { "*" } });
-            modelBuilder.Entity<Role>().HasData(new Role { id = 2, name = "Inventory Manager", isActive = true, allowedActions = new string[] { "/inventory/*", "/product/*" } });
+            modelBuilder.Entity<Role>().HasData(new Role { id = 2, name = "Inventory Manager", isActive = true, allowedActions = new string[] { "/inventory/*", "/product/*", "/role/read" } });
 
             //Users
             modelBuilder.Entity<User>().HasData(new User { id = 1, first_name = "Admin", last_name = "", email = "admin@inventorym.com", password = BCrypt.Net.BCrypt.HashPassword("Password123!@#"), passwordDate = DateTime.UtcNow });

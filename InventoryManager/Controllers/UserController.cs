@@ -12,6 +12,10 @@ using InventoryManagerAPI.Authorization;
 using System.Security.Claims;
 using InventoryManagerAPI.Services;
 using Microsoft.AspNetCore.Hosting.Server;
+using System.Text;
+using System.Text.Json;
+using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 
 namespace InventoryManagerAPI.Controllers
 {
@@ -30,21 +34,15 @@ namespace InventoryManagerAPI.Controllers
     public class UserController : ControllerBase
     {
         //Instantiate configuration service
-        private IConfiguration _config;
         private readonly InventoryContext _context;
-        private readonly UserAuthorizationService _userAuthorizationService;
 
-        public UserController(IConfiguration config, InventoryContext context, UserAuthorizationService userAuthorizationService)
+        public UserController(InventoryContext context)
         {
-            _config = config;
             _context = context;
-            _userAuthorizationService = userAuthorizationService;
         }
 
         /// <summary>
         /// Gets a list of all stored Users
-        /// If the user requesting the information has permissions to
-        /// '/roles/read' then the roles will be included in the response
         /// </summary>
         /// <returns>A list of Users</returns>
         [HttpGet]
@@ -53,38 +51,17 @@ namespace InventoryManagerAPI.Controllers
         {
             try
             {
-                var userId = int.Parse(User.FindFirstValue("userId"));
+                //Return only relevant fields
+                return _context.Users
+                                .Select(u => (object)new
+                                {
+                                    u.id,
+                                    u.first_name,
+                                    u.last_name,
+                                    u.email
+                                })
+                                .ToList();
 
-                bool canReadRoles = _userAuthorizationService.UserHasActionPermissionAsync(userId, "/roles/read").Result;
-
-                if (canReadRoles)
-                {
-                    //Return only relevant fields + roles
-                    return _context.Users
-                                   .Include(u => u.roles)
-                                   .Select(u => (object)new
-                                   {
-                                       u.id,
-                                       u.first_name,
-                                       u.last_name,
-                                       u.email,
-                                       u.roles
-                                   })
-                                   .ToList();
-                }
-                else
-                {
-                    //Return only relevant fields
-                    return _context.Users
-                                   .Select(u => (object)new
-                                   {
-                                       u.id,
-                                       u.first_name,
-                                       u.last_name,
-                                       u.email
-                                   })
-                                   .ToList();
-                }
             }
             catch (Exception ex)
             {
@@ -99,8 +76,6 @@ namespace InventoryManagerAPI.Controllers
 
         /// <summary>
         /// Get a user based on the {id}
-        /// If the user requesting the information has permissions to
-        /// '/roles/read' then the roles will be included in the response
         /// </summary>
         /// <returns>A user with the specified id</returns>
         [HttpGet("{id}")]
@@ -109,40 +84,18 @@ namespace InventoryManagerAPI.Controllers
         {
             try
             {
-                var userId = int.Parse(User.FindFirstValue("userId"));
-
-                bool canReadRoles = _userAuthorizationService.UserHasActionPermissionAsync(userId, $"/user/{id}/roles/read").Result;
-
-                if (canReadRoles)
-                {
-                    //Return only relevant fields + roles
-                    return _context.Users
-                                   .Include(u => u.roles)
-                                   .Where(u => u.id == id)
-                                   .Select(u => (object)new
-                                   {
-                                       u.id,
-                                       u.first_name,
-                                       u.last_name,
-                                       u.email,
-                                       u.roles
-                                   })
-                                   .FirstOrDefault();
-                }
-                else
-                {
-                    //Return only relevant fields
-                    return _context.Users
-                                   .Where(u => u.id == id)
-                                   .Select(u => (object)new
-                                   {
-                                       u.id,
-                                       u.first_name,
-                                       u.last_name,
-                                       u.email
-                                   })
-                                   .FirstOrDefault();
-                }
+                //Return only relevant fields
+                return _context.Users
+                                .Where(u => u.id == id)
+                                .Select(u => (object)new
+                                {
+                                    u.id,
+                                    u.first_name,
+                                    u.last_name,
+                                    u.email
+                                })
+                                .FirstOrDefault();
+                
             }
             catch (Exception ex)
             {
@@ -218,10 +171,14 @@ namespace InventoryManagerAPI.Controllers
                                              .SingleOrDefault((u) => u.id == id);
 
                 if (existingUser is null)
-                    return NotFound();
+                    return NotFound(new
+                    {
+                        code = "E000003",
+                        message = "User has not been found"
+                    });
 
                 //Creates a dictionary of properties that should be updated.
-                Dictionary<string, object> updateDict = user.ToObject<Dictionary<string, object>>();
+                Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(user);
 
                 //Apply property values to existing Country Object
                 foreach (KeyValuePair<string, object> kvp in updateDict)
@@ -231,26 +188,44 @@ namespace InventoryManagerAPI.Controllers
 
                     //Cannot modify the following keys through this API Endpoint
                     if (new string[] { "email", "passwordDate" }.Contains(kvp.Key))
-                        return BadRequest(String.Format("Property '{0}' is read-only", kvp.Key));
+                        return BadRequest(new
+                        {
+                            code = "E000004",
+                            message = String.Format("Property '{0}' is read-only", kvp.Key)
+                        });
 
                     //Confirm if propert exists...
                     if (existingUser.GetType().GetProperty(kvp.Key) is null)
-                        return BadRequest(String.Format("Property '{0}' does not exist.", kvp.Key));
+                        return BadRequest(new
+                        {
+                            code = "E000005",
+                            message = String.Format("Property '{0}' does not exist.", kvp.Key)
+                        });
 
-                    //When updating the password, the password must be validated and hashed - the password date is also updated.
-                    if (new string[] { "password" }.Contains(kvp.Key))
-                    {
-                        if (!existingUser.IsPasswordValid((string)kvp.Value))
-                            return BadRequest(String.Format("The new password is not valid", kvp.Key));
-
-                        existingUser.password = BCrypt.Net.BCrypt.HashPassword((string)kvp.Value);
-                        existingUser.passwordDate = DateTime.UtcNow;
-                        continue;
-                    }
 
                     //Gets the type of the property being update - accounts for nullable properties
                     Type propertyType = existingUser.GetType().GetProperty(kvp.Key).PropertyType;
                     propertyType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+
+                    //Converts the dynamic value into the correct type
+                    object value = kvp.Value is null ? 
+                                                null : 
+                                                JsonSerializer.Deserialize(((JsonElement)kvp.Value).GetRawText(), propertyType);
+
+                    //When updating the password, the password must be validated and hashed - the password date is also updated.
+                    if (new string[] { "password" }.Contains(kvp.Key))
+                    {
+                        if (!existingUser.IsPasswordValid((string)value))
+                            return BadRequest(new
+                            {
+                                code = "E000006",
+                                message = String.Format("The new password is not valid", kvp.Key)
+                            });
+
+                        existingUser.password = BCrypt.Net.BCrypt.HashPassword((string)value);
+                        existingUser.passwordDate = DateTime.UtcNow;
+                        continue;
+                    }
 
                     //Dynamically sets the existing Country properties based on the received by the request - Unspecified properties remain unchanged.
                     existingUser
@@ -258,7 +233,7 @@ namespace InventoryManagerAPI.Controllers
                         .GetProperty(kvp.Key)
                         .SetValue(
                             existingUser,
-                            kvp.Value is null ? null : Convert.ChangeType(kvp.Value, propertyType),
+                            value,
                             null
                     );
                 }
@@ -273,7 +248,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000003",
+                    code = "E000007",
                     message = Utils.Log(ex)
                 });
             }
@@ -291,7 +266,11 @@ namespace InventoryManagerAPI.Controllers
                                             .SingleOrDefault(s => s.id == id);
 
                 if (existingUser is null)
-                    return NotFound();
+                    return NotFound(new
+                    {
+                        code = "E000008",
+                        message = "User has not been found"
+                    });
 
                 _context.Remove(existingUser);
                 _context.SaveChanges();
@@ -302,7 +281,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000004",
+                    code = "E000009",
                     message = Utils.Log(ex)
                 });
             }
