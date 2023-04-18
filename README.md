@@ -7,23 +7,40 @@ This project will leverage Entity Framework 7 - and be paired with PostgreSQL da
 
 ## Roadmap
 I will be dedicating time to this project when possible and the main features I am aiming for are:
-1. **User Management:**
-- ~~CRUD for User~~ **Done**
-- ~~CRUD for Roles~~ **Done**
-- ~~Endpoint for Login with Email and Password~~ **Done**
-- ~~RBAC for all endpoints~~ **Done**
-2. **Product Management:**
-- CRUD for Category
-- CRUD for Subcategories
-- CRUD for Products
-3. **Inventory Management:**
-- CRUD for Inventory Entries
-- Returns
-- Sales/Orders
-4. **ChatGPT (or maybe another LLM):**
-- System that leverages LLMs to interpret Natural Language requests and initiate API Actions or answer questions about the state of the system.
-5. **Frontend**
-- Create a webpage to consume this API
-- The webpage will be another Open Source Project and will be linked here
+> The goals are in general terms
+
+**User Management:**
+| Status | Goal | Labels |
+| :---: | :--- | --- |
+| ✔ | CRUD for User |`complete`|
+| ✔ | CRUD for Roles |`complete`|
+| ✔ | Endpoint for Login with Email and Password |`complete`|
+| ✔ | RBAC for all endpoints |`complete`|
+
+**Product Management:**
+| Status | Goal | Labels |
+| :---: | :--- | --- |
+| 🚀 | CRUD for Category |`in progress`|
+| ❌ | CRUD for Subcategories |`not started`|
+| ❌ | CRUD for Products |`not started`|
+
+**Inventory Management:**
+| Status | Goal | Labels |
+| :---: | :--- | --- |
+| ❌ | CRUD for Inventory Entries |`not started`|
+| ❌ | CRUD for Returns |`not started`|
+| ❌ | CRUD for Sales |`not started`|
+| ❌ | CRUD for Orders |`not started`|
+
+**ChatGPT (or maybe another LLM):**
+| Status | Goal | Labels |
+| :---: | :--- | --- |
+| ❌ | System that leverages LLMs to interpret Natural Language requests and initiate API Actions or answer questions about the state of the system. |`not started`|
+
+**Frontend**
+| Status | Goal | Labels |
+| :---: | :--- | --- |
+| ❌ | Create a webpage to consume this API. |`not started`|
+| ❌ | The webpage will be another Open Source Project and will be linked here. |`not started`|
 
 If you have any questions or would like to contact me about this project, you can reach me on [viniciusmorais352@gmail.com](mailto:viniciusmorais352@gmail.com)
