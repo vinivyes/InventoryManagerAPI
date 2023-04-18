@@ -8,9 +8,10 @@ This project will leverage Entity Framework 7 - and be paired with PostgreSQL da
 ## Roadmap
 I will be dedicating time to this project when possible and the main features I am aiming for are:
 1. **User Management:**
-- CRUD Operations via API
-- Login with Email/Password
-- RBAC for all endpoints
+- ~~CRUD for User~~ **Done**
+- ~~CRUD for Roles~~ **Done**
+- ~~Endpoint for Login with Email and Password~~ **Done**
+- ~~RBAC for all endpoints~~ **Done**
 2. **Product Management:**
 - CRUD for Category
 - CRUD for Subcategories
