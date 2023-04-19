@@ -22,6 +22,41 @@ namespace InventoryManagerAPI.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("InventoryManagerAPI.Models.Category", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("id"));
+
+                    b.Property<string>("description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("isActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("id");
+
+                    b.HasIndex("name")
+                        .IsUnique();
+
+                    b.ToTable("Category");
+
+                    b.HasData(
+                        new
+                        {
+                            id = 1,
+                            description = "Electronic Devices go in this categories, such as: Cellphones, TVs, etc.",
+                            isActive = true,
+                            name = "Electronics"
+                        });
+                });
+
             modelBuilder.Entity("InventoryManagerAPI.Models.Role", b =>
                 {
                     b.Property<int>("id")
@@ -61,7 +96,7 @@ namespace InventoryManagerAPI.Migrations
                         new
                         {
                             id = 2,
-                            allowedActions = new[] { "/inventory/*", "/product/*" },
+                            allowedActions = new[] { "/inventory/*", "/product/*", "/role/read" },
                             isActive = true,
                             name = "Inventory Manager"
                         });
@@ -108,8 +143,8 @@ namespace InventoryManagerAPI.Migrations
                             email = "admin@inventorym.com",
                             first_name = "Admin",
                             last_name = "",
-                            password = "$2a$11$RbTq/mnxc0angKoXSU25C.VuNe8ceTMO6/wbHTqmHe3zUO7uhsftS",
-                            passwordDate = new DateTime(2023, 4, 11, 0, 58, 12, 941, DateTimeKind.Utc).AddTicks(6409)
+                            password = "$2a$11$E42fEMNdBpQZwcl9no5P4.Yvdp1QlHmZfPtJT5mccjVEtcCnsEG4q",
+                            passwordDate = new DateTime(2023, 4, 19, 0, 59, 36, 925, DateTimeKind.Utc).AddTicks(2478)
                         });
                 });
 
