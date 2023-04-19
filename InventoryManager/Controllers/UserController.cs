@@ -84,24 +84,33 @@ namespace InventoryManagerAPI.Controllers
         {
             try
             {
-                //Return only relevant fields
-                return _context.Users
-                                .Where(u => u.id == id)
-                                .Select(u => (object)new
-                                {
-                                    u.id,
-                                    u.first_name,
-                                    u.last_name,
-                                    u.email
-                                })
-                                .FirstOrDefault();
-                
+                object user = _context.Users
+                                    .Where(u => u.id == id)
+                                    .Select(u => (object)new
+                                    {
+                                        u.id,
+                                        u.first_name,
+                                        u.last_name,
+                                        u.email
+                                    })
+                                    .FirstOrDefault();
+
+                if (user == null)
+                {
+                    return NotFound(new
+                    {
+                        code = "E000001",
+                        message = "User could not be found"
+                    });
+                }
+
+                return user;
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
-                    code = "E000001",
+                    code = "E000002",
                     message = Utils.Log(ex)
                 });
             }
@@ -143,7 +152,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000002",
+                    code = "E000003",
                     message = Utils.Log(ex)
                 });
             }
@@ -173,14 +182,14 @@ namespace InventoryManagerAPI.Controllers
                 if (existingUser is null)
                     return NotFound(new
                     {
-                        code = "E000003",
+                        code = "E000004",
                         message = "User has not been found"
                     });
 
                 //Creates a dictionary of properties that should be updated.
                 Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(user);
 
-                //Apply property values to existing Country Object
+                //Apply property values to existing User Object
                 foreach (KeyValuePair<string, object> kvp in updateDict)
                 {
                     if (kvp.Key == "id")
@@ -190,7 +199,7 @@ namespace InventoryManagerAPI.Controllers
                     if (new string[] { "email", "passwordDate" }.Contains(kvp.Key))
                         return BadRequest(new
                         {
-                            code = "E000004",
+                            code = "E000005",
                             message = String.Format("Property '{0}' is read-only", kvp.Key)
                         });
 
@@ -198,7 +207,7 @@ namespace InventoryManagerAPI.Controllers
                     if (existingUser.GetType().GetProperty(kvp.Key) is null)
                         return BadRequest(new
                         {
-                            code = "E000005",
+                            code = "E000006",
                             message = String.Format("Property '{0}' does not exist.", kvp.Key)
                         });
 
@@ -218,7 +227,7 @@ namespace InventoryManagerAPI.Controllers
                         if (!existingUser.IsPasswordValid((string)value))
                             return BadRequest(new
                             {
-                                code = "E000006",
+                                code = "E000007",
                                 message = String.Format("The new password is not valid", kvp.Key)
                             });
 
@@ -227,7 +236,7 @@ namespace InventoryManagerAPI.Controllers
                         continue;
                     }
 
-                    //Dynamically sets the existing Country properties based on the received by the request - Unspecified properties remain unchanged.
+                    //Dynamically sets the existing User properties based on the received by the request - Unspecified properties remain unchanged.
                     existingUser
                         .GetType()
                         .GetProperty(kvp.Key)
@@ -248,13 +257,20 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000007",
+                    code = "E000008",
                     message = Utils.Log(ex)
                 });
             }
         }
 
 
+        /// <summary>
+        /// Deletes a user with the specified ID.
+        /// If the given ID does not correspond to an existing user, a not found status code is returned.
+        /// If the delete operation is successful, an OK status code is returned.
+        /// </summary>
+        /// <param name="id">The ID of the user to be deleted</param>
+        /// <returns>A status code indicating the outcome of the operation</returns>
         [HttpDelete("{id}")]
         [AuthorizeAction("/user/delete")]
         public IActionResult Delete(int id)
@@ -268,7 +284,7 @@ namespace InventoryManagerAPI.Controllers
                 if (existingUser is null)
                     return NotFound(new
                     {
-                        code = "E000008",
+                        code = "E000009",
                         message = "User has not been found"
                     });
 
@@ -281,7 +297,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000009",
+                    code = "E000010",
                     message = Utils.Log(ex)
                 });
             }
