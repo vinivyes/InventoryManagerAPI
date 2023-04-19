@@ -19,6 +19,7 @@ namespace InventoryManagerAPI.Context
 
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<Category> Categories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,6 +32,10 @@ namespace InventoryManagerAPI.Context
 
             // User-Roles
             modelBuilder.Entity("RoleUser").HasData(new { usersid = 1, rolesid = 1 });
+
+            //Categories
+            modelBuilder.Entity<Category>().HasData(new Category { id = 1, name = "Electronics", isActive = true, description = "Electronic Devices go in this categories, such as: Cellphones, TVs, etc." });
+
         }
     }
 }
