@@ -131,6 +131,23 @@ namespace InventoryManagerAPI.Controllers
         {
             try
             {
+                if (!user.IsPasswordValid(user.password))
+                {
+                    return BadRequest(new
+                    {
+                        code = "E000003",
+                        message = "Password is not valid, use at least 8 characters, 1 upper-case, 1 lower-case, 1 number"
+                    });
+                }
+
+                if (_context.Users.Where(u => u.email == user.email).Any())
+                {
+                    return Conflict(new
+                    {
+                        code = "E000004",
+                        message = "Email has already been registered."
+                    });
+                }
 
                 //Default Values
                 user.password = BCrypt.Net.BCrypt.HashPassword(user.password);
@@ -152,7 +169,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000003",
+                    code = "E000005",
                     message = Utils.Log(ex)
                 });
             }
@@ -182,12 +199,14 @@ namespace InventoryManagerAPI.Controllers
                 if (existingUser is null)
                     return NotFound(new
                     {
-                        code = "E000004",
+                        code = "E000006",
                         message = "User has not been found"
                     });
 
                 //Creates a dictionary of properties that should be updated.
-                Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(user);
+                Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                                                            JsonSerializer.SerializeToUtf8Bytes(user)
+                                                        );
 
                 //Apply property values to existing User Object
                 foreach (KeyValuePair<string, object> kvp in updateDict)
@@ -199,7 +218,7 @@ namespace InventoryManagerAPI.Controllers
                     if (new string[] { "email", "passwordDate" }.Contains(kvp.Key))
                         return BadRequest(new
                         {
-                            code = "E000005",
+                            code = "E000007",
                             message = String.Format("Property '{0}' is read-only", kvp.Key)
                         });
 
@@ -207,7 +226,7 @@ namespace InventoryManagerAPI.Controllers
                     if (existingUser.GetType().GetProperty(kvp.Key) is null)
                         return BadRequest(new
                         {
-                            code = "E000006",
+                            code = "E000008",
                             message = String.Format("Property '{0}' does not exist.", kvp.Key)
                         });
 
@@ -227,8 +246,8 @@ namespace InventoryManagerAPI.Controllers
                         if (!existingUser.IsPasswordValid((string)value))
                             return BadRequest(new
                             {
-                                code = "E000007",
-                                message = String.Format("The new password is not valid", kvp.Key)
+                                code = "E000009",
+                                message = "Password is not valid, use at least 8 characters, 1 upper-case, 1 lower-case, 1 number"
                             });
 
                         existingUser.password = BCrypt.Net.BCrypt.HashPassword((string)value);
@@ -257,7 +276,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000008",
+                    code = "E000010",
                     message = Utils.Log(ex)
                 });
             }
@@ -284,7 +303,7 @@ namespace InventoryManagerAPI.Controllers
                 if (existingUser is null)
                     return NotFound(new
                     {
-                        code = "E000009",
+                        code = "E000011",
                         message = "User has not been found"
                     });
 
@@ -297,7 +316,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E000010",
+                    code = "E000012",
                     message = Utils.Log(ex)
                 });
             }

@@ -13,7 +13,7 @@ namespace InventoryManagerAPI.Context
 {
     public class InventoryContext : DbContext
     {
-        public InventoryContext(DbContextOptions options) : base(options)
+        public InventoryContext(DbContextOptions<InventoryContext> options) : base(options)
         {
         }
 
