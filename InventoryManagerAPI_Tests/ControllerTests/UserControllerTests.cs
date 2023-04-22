@@ -61,7 +61,10 @@ namespace InventoryManagerAPI_Tests.ControllerTests
 
             // Assert
             var objectResult = Assert.IsType<ActionResult<List<object>>>(result);
-            var users = Assert.IsAssignableFrom<List<object>>(objectResult.Value);
+            var users = Assert.IsAssignableFrom<List<User>>(
+                                        JsonSerializer.Deserialize<List<User>>(
+                                            JsonSerializer.SerializeToUtf8Bytes(objectResult.Value)
+                                        ));
             Assert.NotEmpty(users);
         }
 
@@ -81,7 +84,11 @@ namespace InventoryManagerAPI_Tests.ControllerTests
 
             // Assert
             var objectResult = Assert.IsType<ActionResult<object>>(result);
-            Assert.NotNull(objectResult.Value);
+            var user = Assert.IsAssignableFrom<User>(
+                                        JsonSerializer.Deserialize<User>(
+                                            JsonSerializer.SerializeToUtf8Bytes(objectResult.Value)
+                                        ));
+            Assert.NotNull(user);
         }
 
         /// <summary>
@@ -186,7 +193,7 @@ namespace InventoryManagerAPI_Tests.ControllerTests
         /// Tests if the Update method successfully updates an existing user's data.
         /// </summary>
         [Fact]
-        public void Update_ReturnsUpdatedUser_WhenIdExists()
+        public void Update_ReturnsUpdatedUser()
         {
             // Arrange
             var dbContext = GetTestDbContext();
@@ -199,10 +206,11 @@ namespace InventoryManagerAPI_Tests.ControllerTests
             };
 
             // Act
-            controller.Update(existingId, updatedData);
+            var updateOp = controller.Update(existingId, updatedData);
             var result = controller.GetById(existingId);
 
             // Assert
+            Assert.IsType<NoContentResult>(updateOp);
             Assert.IsType<ActionResult<object>>(result);
             var updatedUser = Assert.IsAssignableFrom<User>(
                                         JsonSerializer.Deserialize<User>(
@@ -282,7 +290,7 @@ namespace InventoryManagerAPI_Tests.ControllerTests
         /// Test if GetById returns NotFound when user is deleted.
         /// </summary>
         [Fact]
-        public void GetById_ReturnsNotFound_WhenUserIsDeleted()
+        public void Delete_GetById_ReturnsNotFound_WhenUserIsDeleted()
         {
             // Arrange
             var dbContext = GetTestDbContext();

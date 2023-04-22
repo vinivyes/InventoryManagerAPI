@@ -79,7 +79,7 @@ namespace InventoryManagerAPI.Controllers
         {
             try
             {
-                return _context.Roles
+                object role = _context.Roles
                                .Where(r => r.id == id)
                                .Select(r => (object)new
                                {
@@ -90,12 +90,23 @@ namespace InventoryManagerAPI.Controllers
                                    r.notAllowedActions
                                })
                                .FirstOrDefault();
+
+                if (role == null)
+                {
+                    return NotFound(new
+                    {
+                        code = "E100001",
+                        message = "Role could not be found"
+                    });
+                }
+
+                return role;
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
-                    code = "E100001",
+                    code = "E100002",
                     message = Utils.Log(ex)
                 });
             }
@@ -119,7 +130,7 @@ namespace InventoryManagerAPI.Controllers
                     return NotFound(
                         new
                         {
-                            code = "E100002",
+                            code = "E100003",
                             message = "User could not be found"
                         });
                 }
@@ -139,7 +150,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E100003",
+                    code = "E100004",
                     message = Utils.Log(ex)
                 });
             }
@@ -156,6 +167,22 @@ namespace InventoryManagerAPI.Controllers
         {
             try
             {
+                //Verify if all the actions being created are valid.
+                foreach(string action in (
+                                              role.allowedActions ?? new string[] { } ).Concat(
+                                              role.notAllowedActions ?? new string[] { })
+                                         )
+                {
+                    if (!role.IsValidAction(action))
+                    {
+                        return BadRequest(new
+                        {
+                            code = "E100005",
+                            message = "Invalid action: " + action
+                        });
+                    }
+                }
+
                 //Default Values
                 role.users = new List<User>();
 
@@ -168,7 +195,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E100004",
+                    code = "E100006",
                     message = Utils.Log(ex)
                 });
             }
@@ -194,14 +221,14 @@ namespace InventoryManagerAPI.Controllers
                     return NotFound(
                         new
                         {
-                               code = user == null ? "E100005"                 : "E100006",
+                               code = user == null ? "E100007"                 : "E100008",
                             message = user == null ? "User could not be found" : "Role could not be found"
                         });
                 }
 
                 if(!role.isActive)
                     return BadRequest(new { 
-                                code = "E100007",
+                                code = "E100009",
                                 message = "Role is not active"
                            });
 
@@ -214,7 +241,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E100008",
+                    code = "E1000010",
                     message = Utils.Log(ex)
                 });
             }
@@ -242,12 +269,14 @@ namespace InventoryManagerAPI.Controllers
                 if (existingRole is null)
                     return NotFound(new
                     {
-                        code = "E100009",
+                        code = "E100011",
                         message = "Role could not be found"
                     });
 
                 // Creates a dictionary of properties that should be updated
-                Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(role);
+                Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                                                            JsonSerializer.SerializeToUtf8Bytes(role)
+                                                        );
 
                 // Apply property values to existing Role object
                 foreach (KeyValuePair<string, object> kvp in updateDict)
@@ -259,7 +288,7 @@ namespace InventoryManagerAPI.Controllers
                     if (existingRole.GetType().GetProperty(kvp.Key) is null)
                         return BadRequest(new
                         {
-                            code = "E100010",
+                            code = "E100012",
                             message = String.Format("Property '{0}' does not exist.", kvp.Key)
                         });
 
@@ -271,7 +300,25 @@ namespace InventoryManagerAPI.Controllers
                     object value = kvp.Value is null ? 
                                                 null : 
                                                 JsonSerializer.Deserialize(((JsonElement)kvp.Value).GetRawText(), propertyType);
-                    
+
+                    //When updating the actions, each action must be validated.
+                    if (new string[] { "allowedActions", "notAllowedActions" }.Contains(kvp.Key))
+                    {
+
+                        //Verify if all the actions being created are valid.
+                        foreach (string action in (string[])value)
+                        {
+                            if (!new Role().IsValidAction(action))
+                            {
+                                return BadRequest(new
+                                {
+                                    code = "E100013",
+                                    message = "Invalid action: " + action
+                                });
+                            }
+                        }
+                    }
+
                     // Dynamically sets the existing Role properties based on the received by the request - Unspecified properties remain unchanged
                     existingRole
                         .GetType()
@@ -292,7 +339,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E100011",
+                    code = "E100014",
                     message = Utils.Log(ex)
                 });
             }
@@ -317,7 +364,7 @@ namespace InventoryManagerAPI.Controllers
                 {
                     return NotFound(new
                     {
-                        code = "E100012",
+                        code = "E100015",
                         message = "Role could not be found"
                     });
                 }
@@ -327,7 +374,7 @@ namespace InventoryManagerAPI.Controllers
                 {
                     return Conflict(new
                     {
-                        code = "E100013",
+                        code = "E100016",
                         message = "This role cannot be deleted as it is associated with one or more users."
                     });
                 }
@@ -341,7 +388,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E100014",
+                    code = "E100017",
                     message = Utils.Log(ex)
                 });
             }
@@ -367,7 +414,7 @@ namespace InventoryManagerAPI.Controllers
                     return NotFound(
                         new
                         {
-                            code = user == null ? "E100015" : "E100016",
+                            code = user == null ? "E100018" : "E100019",
                             message = user == null ? "User could not be found" : "Role could not be found"
                         });
                 }
@@ -381,7 +428,7 @@ namespace InventoryManagerAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    code = "E100017",
+                    code = "E100020",
                     message = Utils.Log(ex)
                 });
             }
