@@ -46,10 +46,10 @@ I will be dedicating time to this project when possible and the main features I 
 **Unit Tests:**
 | Status | Goal | Labels |
 | :---: | :--- | --- |
-| 🚀 | Unit Tests for all User endpoints  |`in progress`|
-| ❌ | Unit Tests for all Role endpoints  |`not started`|
-| ❌ | Unit Tests for all Authentication endpoints  |`not started`|
-| ❌ | Unit Tests for all Category endpoints  |`not started`|
+| ✔ | Unit Tests for all User endpoints  |`complete`|
+| ✔ | Unit Tests for all Role endpoints  |`complete`|
+| ✔ | Unit Tests for all Authentication endpoints  |`complete`|
+| 🚀 | Unit Tests for all Category endpoints  |`in progress`|
 | ❌ | Unit Tests for all Sub Category endpoints  |`not started`|
 | ❌ | Unit Tests for all Product endpoints  |`not started`|
 | ❌ | Unit Tests for all Inventory Entry endpoints  |`not started`|
