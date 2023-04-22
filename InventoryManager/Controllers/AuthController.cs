@@ -94,11 +94,11 @@ namespace InventoryManagerAPI.Controllers
                         claims.ToArray()
                     );
 
-                return new
+                return Ok(new
                 {
                     token = new JwtSecurityTokenHandler().WriteToken(token),
                     expires = token.ValidTo
-                };
+                });
             }
             catch (Exception ex)
             {
