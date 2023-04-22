@@ -187,7 +187,9 @@ namespace InventoryManagerAPI.Controllers
                     });
 
                 //Creates a dictionary of properties that should be updated.
-                Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(user);
+                Dictionary<string, object> updateDict = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                                                            JsonSerializer.SerializeToUtf8Bytes(user)
+                                                        );
 
                 //Apply property values to existing User Object
                 foreach (KeyValuePair<string, object> kvp in updateDict)

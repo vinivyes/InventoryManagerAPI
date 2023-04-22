@@ -1,4 +1,5 @@
-﻿using InventoryManagerAPI.Context;
+﻿using BCrypt.Net;
+using InventoryManagerAPI.Context;
 using InventoryManagerAPI.Controllers;
 using InventoryManagerAPI.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -7,12 +8,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using BCrypt.Net;
 
 namespace InventoryManagerAPI_Tests.ControllerTests
 {
     public class UserControllerTests
     {
+        /// <summary>
+        /// Creates a new test instance of the InventoryContext class with an in-memory database.
+        /// Sets up an initial user with an administrator role.
+        /// </summary>
+        /// <returns>The test instance of the InventoryContext class.</returns>
         private TestInventoryContext GetTestDbContext()
         {
             //Creates a new DB Context for testing, uses a GUID to create a unique DB name for every test.
@@ -39,6 +47,9 @@ namespace InventoryManagerAPI_Tests.ControllerTests
             return dbContext;
         }
 
+        /// <summary>
+        /// Tests if the GetAll method returns a list of users with at least one user.
+        /// </summary>
         [Fact]
         public void GetAll_ReturnsListOfUsers()
         {
@@ -55,6 +66,9 @@ namespace InventoryManagerAPI_Tests.ControllerTests
             Assert.Single(users);
         }
 
+        /// <summary>
+        /// Tests if the GetById method returns a user when a valid user ID is provided.
+        /// </summary>
         [Fact]
         public void GetById_ReturnsUser_WhenIdExists()
         {
@@ -71,6 +85,9 @@ namespace InventoryManagerAPI_Tests.ControllerTests
             Assert.NotNull(objectResult.Value);
         }
 
+        /// <summary>
+        /// Tests if the GetById method returns a NotFoundObjectResult when an invalid user ID is provided.
+        /// </summary>
         [Fact]
         public void GetById_ReturnsNotFound_WhenIdDoesNotExist()
         {
@@ -86,6 +103,109 @@ namespace InventoryManagerAPI_Tests.ControllerTests
             Assert.IsType<NotFoundObjectResult>(result.Result);
         }
 
-        // Add more tests for other UserController methods
+        /// <summary>
+        /// Tests if the Create method successfully creates a new user and returns the created user.
+        /// </summary>
+        [Fact]
+        public void Create_ReturnsCreatedUser()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            var newUser = new User
+            {
+                first_name = "John",
+                last_name = "Doe",
+                email = "john.doe@example.com",
+                password = "Password123!@#"
+            };
+
+            // Act
+            var result = controller.Create(newUser);
+
+            // Assert
+            Assert.IsType<ActionResult<object>>(result);
+            var createdUser = Assert.IsAssignableFrom<User>(
+                                        JsonSerializer.Deserialize<User>(
+                                            JsonSerializer.SerializeToUtf8Bytes(result.Value)
+                                        ));
+
+            Assert.Equal(newUser.first_name, createdUser.first_name);
+            Assert.Equal(newUser.last_name, createdUser.last_name);
+            Assert.Equal(newUser.email, createdUser.email);
+        }
+
+        /// <summary>
+        /// Tests if the Update method successfully updates an existing user's data.
+        /// </summary>
+        [Fact]
+        public void Update_ReturnsUpdatedUser_WhenIdExists()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            int existingId = 1;
+            var updatedData = new
+            {
+                first_name = "Updated",
+                last_name = "Name"
+            };
+
+            // Act
+            controller.Update(existingId, updatedData);
+            var result = controller.GetById(existingId);
+
+            // Assert
+            Assert.IsType<ActionResult<object>>(result);
+            var updatedUser = Assert.IsAssignableFrom<User>(
+                                        JsonSerializer.Deserialize<User>(
+                                            JsonSerializer.SerializeToUtf8Bytes(result.Value)
+                                        ));
+
+            Assert.Equal(updatedData.first_name, updatedUser.first_name);
+            Assert.Equal(updatedData.last_name, updatedUser.last_name);
+        }
+
+        /// <summary>
+        /// Tests if the Update method return BadRequest when trying to update user email's.
+        /// </summary>
+        [Fact]
+        public void Update_ReturnsBadRequest_WhenUpdatingEmail()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            int existingId = 1;
+            var updatedData = new
+            {
+                email = "updated.email@example.com"
+            };
+
+            // Act
+            var result = controller.Update(existingId, updatedData);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        /// <summary>
+        /// Tests if the Update method return NotFound when trying to update an user that does not exist.
+        /// </summary>
+        [Fact]
+        public void Update_ReturnsNotFound_WhenIdDoesNotExist()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            int nonExistingId = 100;
+            var updatedData = new
+            {};
+
+            // Act
+            var result = controller.Update(nonExistingId, updatedData);
+
+            // Assert
+            Assert.IsType<NotFoundObjectResult>(result);
+        }
     }
 }
