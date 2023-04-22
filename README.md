@@ -20,7 +20,7 @@ I will be dedicating time to this project when possible and the main features I 
 **Product Management:**
 | Status | Goal | Labels |
 | :---: | :--- | --- |
-| 🚀 | CRUD for Category |`in progress`|
+| ✔ | CRUD for Category |`complete`|
 | ❌ | CRUD for Subcategories |`not started`|
 | ❌ | CRUD for Products |`not started`|
 
@@ -42,5 +42,19 @@ I will be dedicating time to this project when possible and the main features I 
 | :---: | :--- | --- |
 | ❌ | Create a webpage to consume this API. |`not started`|
 | ❌ | The webpage will be another Open Source Project and will be linked here. |`not started`|
+
+**Unit Tests:**
+| Status | Goal | Labels |
+| :---: | :--- | --- |
+| 🚀 | Unit Tests for all User endpoints  |`in progress`|
+| ❌ | Unit Tests for all Role endpoints  |`not started`|
+| ❌ | Unit Tests for all Authentication endpoints  |`not started`|
+| ❌ | Unit Tests for all Category endpoints  |`not started`|
+| ❌ | Unit Tests for all Sub Category endpoints  |`not started`|
+| ❌ | Unit Tests for all Product endpoints  |`not started`|
+| ❌ | Unit Tests for all Inventory Entry endpoints  |`not started`|
+| ❌ | Unit Tests for all Sales endpoints  |`not started`|
+| ❌ | Unit Tests for all Order endpoints  |`not started`|
+| ❌ | Unit Tests for all Returns endpoints  |`not started`|
 
 If you have any questions or would like to contact me about this project, you can reach me on [viniciusmorais352@gmail.com](mailto:viniciusmorais352@gmail.com)
