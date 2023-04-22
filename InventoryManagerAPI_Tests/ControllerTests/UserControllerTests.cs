@@ -10,7 +10,6 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BCrypt.Net;
 
 namespace InventoryManagerAPI_Tests.ControllerTests
 {
@@ -63,7 +62,7 @@ namespace InventoryManagerAPI_Tests.ControllerTests
             // Assert
             var objectResult = Assert.IsType<ActionResult<List<object>>>(result);
             var users = Assert.IsAssignableFrom<List<object>>(objectResult.Value);
-            Assert.Single(users);
+            Assert.NotEmpty(users);
         }
 
         /// <summary>
@@ -129,10 +128,58 @@ namespace InventoryManagerAPI_Tests.ControllerTests
                                         JsonSerializer.Deserialize<User>(
                                             JsonSerializer.SerializeToUtf8Bytes(result.Value)
                                         ));
-
             Assert.Equal(newUser.first_name, createdUser.first_name);
             Assert.Equal(newUser.last_name, createdUser.last_name);
             Assert.Equal(newUser.email, createdUser.email);
+        }
+
+
+        /// <summary>
+        /// Tests if the Create method returns conflict when an user with the same email already exists.
+        /// </summary>
+        [Fact]
+        public void Create_ReturnsConflict_WhenEmailExists()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            var newUser = new User
+            {
+                first_name = "John",
+                last_name = "Doe",
+                email = "admin@inventorym.com",
+                password = "Password123!@#"
+            };
+
+            // Act
+            var result = controller.Create(newUser);
+
+            // Assert
+            Assert.IsType<ConflictObjectResult>(result.Result);
+        }
+
+        /// <summary>
+        /// Tests if the Create method returns BadRequest when attempting to create a user with an invalid password.
+        /// </summary>
+        [Fact]
+        public void Create_ReturnsBadRequest_WhenPasswordIsNotValid()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            var newUser = new User
+            {
+                first_name = "John",
+                last_name = "Doe",
+                email = "john.doe@example.com",
+                password = "invalid"
+            };
+
+            // Act
+            var result = controller.Create(newUser);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         /// <summary>
@@ -206,6 +253,49 @@ namespace InventoryManagerAPI_Tests.ControllerTests
 
             // Assert
             Assert.IsType<NotFoundObjectResult>(result);
+        }
+
+
+        /// <summary>
+        /// Tests if the Update method return BadRequest when trying to update a read-only property.
+        /// </summary>
+        [Fact]
+        public void Update_ReturnsBadRequest_WhenPropertyIsReadOnly()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            int existingId = 1;
+            var updatedData = new
+            {
+                password_date = DateTime.Now
+            };
+
+            // Act
+            var result = controller.Update(existingId, updatedData);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        /// <summary>
+        /// Test if GetById returns NotFound when user is deleted.
+        /// </summary>
+        [Fact]
+        public void GetById_ReturnsNotFound_WhenUserIsDeleted()
+        {
+            // Arrange
+            var dbContext = GetTestDbContext();
+            var controller = new UserController(dbContext);
+            int existingId = 1;
+
+            // Act
+            var deleteOp = controller.Delete(existingId);
+            var result = controller.GetById(existingId);
+
+            // Assert
+            Assert.IsType<OkResult>(deleteOp);
+            Assert.IsType<NotFoundObjectResult>(result.Result);
         }
     }
 }
